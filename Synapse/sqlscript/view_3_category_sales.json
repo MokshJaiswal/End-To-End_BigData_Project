@@ -1,0 +1,17 @@
+{
+	"name": "view_3_category_sales",
+	"properties": {
+		"content": {
+			"query": "CREATE OR ALTER VIEW gold.category_sales\nAS\nSELECT\n    product_category_name_english AS category,\n    COUNT(DISTINCT order_id) AS total_orders,\n    SUM(payment_value) AS total_revenue,\n    AVG(payment_value) AS avg_order_value\nFROM gold.delivered_orders\nGROUP BY product_category_name_english\nGO\nSELECT * FROM gold.category_sales",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "olist",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

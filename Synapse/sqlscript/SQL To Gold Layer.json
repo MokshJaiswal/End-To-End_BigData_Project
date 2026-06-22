@@ -1,0 +1,17 @@
+{
+	"name": "SQL To Gold Layer",
+	"properties": {
+		"content": {
+			"query": "--CREATE MASTER KEY ENCRYPTION BY PASSWORD = '{password}';\n--CREATE DATABASE SCOPED CREDENTIAL mokshadmin WITH IDENTITY = 'Managed Identity';\n\n\nCREATE EXTERNAL FILE FORMAT extfileformat WITH (\n    FORMAT_TYPE = PARQUET,\n    DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'\n);\nGO\n\nCREATE EXTERNAL DATA SOURCE goldlayer WITH (\n    LOCATION = 'https://olistecommstorageaccount.dfs.core.windows.net/olist-ecomm-data/gold/',\n    CREDENTIAL = mokshadmin\n);\nGO\n\nCREATE EXTERNAL TABLE gold.final_table WITH (\n    LOCATION = 'final_table',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.final;\nGO\n\nCREATE EXTERNAL TABLE gold.delivered_orders_table WITH (\n    LOCATION = 'delivered_orders',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.delivered_orders;\nGO\n\nCREATE EXTERNAL TABLE gold.category_sales_table WITH (\n    LOCATION = 'category_sales',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.category_sales;\nGO\n\nCREATE EXTERNAL TABLE gold.monthly_sales_table WITH (\n    LOCATION = 'monthly_sales',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.monthly_sales;\nGO\n\nCREATE EXTERNAL TABLE gold.delivery_performance_table WITH (\n    LOCATION = 'delivery_performance_by_state',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.delivery_performance_by_state;\nGO\n\nCREATE EXTERNAL TABLE gold.seller_performance_table WITH (\n    LOCATION = 'seller_performance',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.seller_performance;\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "olist",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

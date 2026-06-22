@@ -1,0 +1,17 @@
+{
+	"name": "view_4_monthly_sales",
+	"properties": {
+		"content": {
+			"query": "CREATE OR ALTER VIEW gold.monthly_sales\nAS\nSELECT\n    DATEFROMPARTS(YEAR(order_purchase_timestamp), MONTH(order_purchase_timestamp), 1) AS order_month,\n    COUNT(DISTINCT order_id) AS total_orders,\n    SUM(payment_value) AS total_revenue\nFROM gold.delivered_orders\nGROUP BY YEAR(order_purchase_timestamp), MONTH(order_purchase_timestamp)\nGO\nSELECT * FROM gold.monthly_sales",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "olist",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

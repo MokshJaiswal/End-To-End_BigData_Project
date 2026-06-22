@@ -1,0 +1,17 @@
+{
+	"name": "view_5_delivery_performance_by_state",
+	"properties": {
+		"content": {
+			"query": "CREATE OR ALTER VIEW gold.delivery_performance_by_state\nAS\nSELECT\n    customer_state,\n    COUNT(DISTINCT order_id) AS total_orders,\n    AVG(delay) AS avg_delay_days,\n    SUM(CASE WHEN delay > 0 THEN 1 ELSE 0 END) AS late_orders\nFROM gold.delivered_orders\nGROUP BY customer_state\nGO\nSELECT * FROM gold.delivery_performance_by_state",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "olist",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 1",
+	"properties": {
+		"content": {
+			"query": "SELECT order_id, COUNT(*) AS item_count\nFROM OPENROWSET(\n    BULK 'https://olistecommstorageaccount.dfs.core.windows.net/olist-ecomm-data/bronze/olist_order_items_dataset.csv',\n    FORMAT = 'CSV',\n    PARSER_VERSION = '2.0',\n    HEADER_ROW = TRUE\n) AS items_check\nWHERE order_id IN (\n    '001ab0a7578dd66cd4b0a71f5b6e1e41',\n    '008d9bf350ff02ed444b3452cf3f57e0',\n    '002f98c0f7efd42638ed6100ca699b42',\n    '009905140e9f8cc35d5be897937381db',\n    '00c00d5b36157595e21108ba1da2828f'\n)\nGROUP BY order_id;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "olist",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
