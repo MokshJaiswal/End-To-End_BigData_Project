@@ -1,0 +1,331 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "olistsynapse"
+		},
+		"olistsynapse-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'olistsynapse-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:olistsynapse.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"olistsynapse-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://olistsynapseadls.dfs.core.windows.net"
+		},
+		"synapse_serverless_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "olistsynapse-ondemand.sql.azuresynapse.net"
+		},
+		"synapse_serverless_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "olist"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/refresh-gold-views')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Script1",
+						"type": "Script",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "synapse_serverless",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"type": "Query",
+									"text": "EXEC gold.refresh_gold_views;"
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-06-21T20:59:52Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/synapse_serverless')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/olistsynapse-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('olistsynapse-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/olistsynapse-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('olistsynapse-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/synapse_serverless')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('synapse_serverless_properties_typeProperties_server')]",
+					"database": "[parameters('synapse_serverless_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SystemAssignedManagedIdentity"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL To Gold Layer')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "--CREATE MASTER KEY ENCRYPTION BY PASSWORD = '{password}';\n--CREATE DATABASE SCOPED CREDENTIAL mokshadmin WITH IDENTITY = 'Managed Identity';\n\n\nCREATE EXTERNAL FILE FORMAT extfileformat WITH (\n    FORMAT_TYPE = PARQUET,\n    DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'\n);\nGO\n\nCREATE EXTERNAL DATA SOURCE goldlayer WITH (\n    LOCATION = 'https://olistecommstorageaccount.dfs.core.windows.net/olist-ecomm-data/gold/',\n    CREDENTIAL = mokshadmin\n);\nGO\n\nCREATE EXTERNAL TABLE gold.final_table WITH (\n    LOCATION = 'final_table',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.final;\nGO\n\nCREATE EXTERNAL TABLE gold.delivered_orders_table WITH (\n    LOCATION = 'delivered_orders',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.delivered_orders;\nGO\n\nCREATE EXTERNAL TABLE gold.category_sales_table WITH (\n    LOCATION = 'category_sales',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.category_sales;\nGO\n\nCREATE EXTERNAL TABLE gold.monthly_sales_table WITH (\n    LOCATION = 'monthly_sales',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.monthly_sales;\nGO\n\nCREATE EXTERNAL TABLE gold.delivery_performance_table WITH (\n    LOCATION = 'delivery_performance_by_state',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.delivery_performance_by_state;\nGO\n\nCREATE EXTERNAL TABLE gold.seller_performance_table WITH (\n    LOCATION = 'seller_performance',\n    DATA_SOURCE = goldlayer,\n    FILE_FORMAT = extfileformat\n) AS SELECT * FROM gold.seller_performance;\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "olist",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/airflow_refresh_gold_views')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE OR ALTER PROCEDURE gold.refresh_gold_views\nAS\nBEGIN\n    EXEC('\n    CREATE OR ALTER VIEW gold.final AS\n    SELECT * FROM OPENROWSET(\n        BULK ''https://olistecommstorageaccount.dfs.core.windows.net/olist-ecomm-data/silver/'',\n        FORMAT = ''PARQUET''\n    ) AS result1\n    ');\n\n    EXEC('\n    CREATE OR ALTER VIEW gold.delivered_orders AS\n    SELECT * FROM gold.final WHERE order_status = ''delivered''\n    ');\n\n    EXEC('\n    CREATE OR ALTER VIEW gold.category_sales AS\n    SELECT product_category_name_english AS category,\n           COUNT(DISTINCT order_id) AS total_orders,\n           SUM(payment_value) AS total_revenue,\n           AVG(payment_value) AS avg_order_value\n    FROM gold.delivered_orders\n    GROUP BY product_category_name_english\n    ');\n\n    EXEC('\n    CREATE OR ALTER VIEW gold.monthly_sales AS\n    SELECT DATEFROMPARTS(YEAR(order_purchase_timestamp), MONTH(order_purchase_timestamp), 1) AS order_month,\n           COUNT(DISTINCT order_id) AS total_orders,\n           SUM(payment_value) AS total_revenue\n    FROM gold.delivered_orders\n    GROUP BY YEAR(order_purchase_timestamp), MONTH(order_purchase_timestamp)\n    ');\n\n    EXEC('\n    CREATE OR ALTER VIEW gold.delivery_performance_by_state AS\n    SELECT customer_state,\n           COUNT(DISTINCT order_id) AS total_orders,\n           AVG(delay) AS avg_delay_days,\n           SUM(CASE WHEN delay > 0 THEN 1 ELSE 0 END) AS late_orders\n    FROM gold.delivered_orders\n    GROUP BY customer_state\n    ');\n\n    EXEC('\n    CREATE OR ALTER VIEW gold.seller_performance AS\n    SELECT seller_id, seller_state,\n           COUNT(DISTINCT order_id) AS total_orders,\n           SUM(payment_value) AS total_revenue,\n           AVG(delay) AS avg_delay_days\n    FROM gold.delivered_orders\n    GROUP BY seller_id, seller_state\n    ');\nEND",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "olist",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/view_1_create_view')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE OR ALTER VIEW gold.final\nas\nSELECT\n    *\nFROM \n    OPENROWSET(\n        BULK 'https://olistecommstorageaccount.dfs.core.windows.net/olist-ecomm-data/silver/',\n        FORMAT = 'PARQUET'\n    ) AS result1\n\nGO\n\nSELECT * FROM gold.final",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "olist",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/view_2_delivered_orders')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE OR ALTER VIEW gold.delivered_orders\nAS\nSELECT * FROM gold.final\nWHERE order_status = 'delivered'\nGO\nSELECT * FROM gold.delivered_orders",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "olist",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/view_3_category_sales')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE OR ALTER VIEW gold.category_sales\nAS\nSELECT\n    product_category_name_english AS category,\n    COUNT(DISTINCT order_id) AS total_orders,\n    SUM(payment_value) AS total_revenue,\n    AVG(payment_value) AS avg_order_value\nFROM gold.delivered_orders\nGROUP BY product_category_name_english\nGO\nSELECT * FROM gold.category_sales",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "olist",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/view_4_monthly_sales')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE OR ALTER VIEW gold.monthly_sales\nAS\nSELECT\n    DATEFROMPARTS(YEAR(order_purchase_timestamp), MONTH(order_purchase_timestamp), 1) AS order_month,\n    COUNT(DISTINCT order_id) AS total_orders,\n    SUM(payment_value) AS total_revenue\nFROM gold.delivered_orders\nGROUP BY YEAR(order_purchase_timestamp), MONTH(order_purchase_timestamp)\nGO\nSELECT * FROM gold.monthly_sales",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "olist",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/view_5_delivery_performance_by_state')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE OR ALTER VIEW gold.delivery_performance_by_state\nAS\nSELECT\n    customer_state,\n    COUNT(DISTINCT order_id) AS total_orders,\n    AVG(delay) AS avg_delay_days,\n    SUM(CASE WHEN delay > 0 THEN 1 ELSE 0 END) AS late_orders\nFROM gold.delivered_orders\nGROUP BY customer_state\nGO\nSELECT * FROM gold.delivery_performance_by_state",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "olist",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/view_6_seller_performance')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE OR ALTER VIEW gold.seller_performance\nAS\nSELECT\n    seller_id,\n    seller_state,\n    COUNT(DISTINCT order_id) AS total_orders,\n    SUM(payment_value) AS total_revenue,\n    AVG(delay) AS avg_delay_days\nFROM gold.delivered_orders\nGROUP BY seller_id, seller_state\nGO\nSELECT * FROM gold.seller_performance",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "olist",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		}
+	]
+}

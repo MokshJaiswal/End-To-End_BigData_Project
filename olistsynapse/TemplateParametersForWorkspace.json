@@ -1,0 +1,21 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"value": "olistsynapse"
+		},
+		"olistsynapse-WorkspaceDefaultSqlServer_connectionString": {
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:olistsynapse.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"olistsynapse-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"value": "https://olistsynapseadls.dfs.core.windows.net"
+		},
+		"synapse_serverless_properties_typeProperties_server": {
+			"value": "olistsynapse-ondemand.sql.azuresynapse.net"
+		},
+		"synapse_serverless_properties_typeProperties_database": {
+			"value": "olist"
+		}
+	}
+}
