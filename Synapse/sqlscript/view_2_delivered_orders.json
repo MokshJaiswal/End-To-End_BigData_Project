@@ -1,0 +1,17 @@
+{
+	"name": "view_2_delivered_orders",
+	"properties": {
+		"content": {
+			"query": "CREATE OR ALTER VIEW gold.delivered_orders\nAS\nSELECT * FROM gold.final\nWHERE order_status = 'delivered'\nGO\nSELECT * FROM gold.delivered_orders",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "olist",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

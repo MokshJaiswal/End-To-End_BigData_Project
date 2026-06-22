@@ -1,0 +1,17 @@
+{
+	"name": "airflow_refresh_gold_views",
+	"properties": {
+		"content": {
+			"query": "CREATE OR ALTER PROCEDURE gold.refresh_gold_views\nAS\nBEGIN\n    EXEC('\n    CREATE OR ALTER VIEW gold.final AS\n    SELECT * FROM OPENROWSET(\n        BULK ''https://olistecommstorageaccount.dfs.core.windows.net/olist-ecomm-data/silver/'',\n        FORMAT = ''PARQUET''\n    ) AS result1\n    ');\n\n    EXEC('\n    CREATE OR ALTER VIEW gold.delivered_orders AS\n    SELECT * FROM gold.final WHERE order_status = ''delivered''\n    ');\n\n    EXEC('\n    CREATE OR ALTER VIEW gold.category_sales AS\n    SELECT product_category_name_english AS category,\n           COUNT(DISTINCT order_id) AS total_orders,\n           SUM(payment_value) AS total_revenue,\n           AVG(payment_value) AS avg_order_value\n    FROM gold.delivered_orders\n    GROUP BY product_category_name_english\n    ');\n\n    EXEC('\n    CREATE OR ALTER VIEW gold.monthly_sales AS\n    SELECT DATEFROMPARTS(YEAR(order_purchase_timestamp), MONTH(order_purchase_timestamp), 1) AS order_month,\n           COUNT(DISTINCT order_id) AS total_orders,\n           SUM(payment_value) AS total_revenue\n    FROM gold.delivered_orders\n    GROUP BY YEAR(order_purchase_timestamp), MONTH(order_purchase_timestamp)\n    ');\n\n    EXEC('\n    CREATE OR ALTER VIEW gold.delivery_performance_by_state AS\n    SELECT customer_state,\n           COUNT(DISTINCT order_id) AS total_orders,\n           AVG(delay) AS avg_delay_days,\n           SUM(CASE WHEN delay > 0 THEN 1 ELSE 0 END) AS late_orders\n    FROM gold.delivered_orders\n    GROUP BY customer_state\n    ');\n\n    EXEC('\n    CREATE OR ALTER VIEW gold.seller_performance AS\n    SELECT seller_id, seller_state,\n           COUNT(DISTINCT order_id) AS total_orders,\n           SUM(payment_value) AS total_revenue,\n           AVG(delay) AS avg_delay_days\n    FROM gold.delivered_orders\n    GROUP BY seller_id, seller_state\n    ');\nEND",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "olist",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

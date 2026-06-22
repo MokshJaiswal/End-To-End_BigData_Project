@@ -1,0 +1,17 @@
+{
+	"name": "view_6_seller_performance",
+	"properties": {
+		"content": {
+			"query": "CREATE OR ALTER VIEW gold.seller_performance\nAS\nSELECT\n    seller_id,\n    seller_state,\n    COUNT(DISTINCT order_id) AS total_orders,\n    SUM(payment_value) AS total_revenue,\n    AVG(delay) AS avg_delay_days\nFROM gold.delivered_orders\nGROUP BY seller_id, seller_state\nGO\nSELECT * FROM gold.seller_performance",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "olist",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
