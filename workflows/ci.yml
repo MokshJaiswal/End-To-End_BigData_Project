@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Airflow/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Airflow/**'
+
+jobs:
+  dag-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Airflow
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install Astro CLI
+        run: curl -sSL install.astronomer.io | sudo bash -s
+
+      - name: Run DAG tests
+        run: astro dev pytest tests/dags/test_dag_example.py
