@@ -1,4 +1,3 @@
-# End-To-End_BigData_Project
 <div align="center">
 
 # 🛒 Olist E-Commerce — End-to-End Big Data Pipeline
